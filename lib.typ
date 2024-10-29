@@ -1,25 +1,17 @@
-#let mathblock(blocktitle: none, counter: none, numbering: "1.1", prefix: auto, titlix: title => [(#title)], suffix: none, bodyfmt: body => body, ..global_block_args) = {
-  // check if blocktitle was provided
-  if blocktitle == none {
-    panic("You have created a `mathblock` without a `blocktitle`. Please provide a `blocktitle` like \"Theorem\" or \"Lemma\" or \"Proof\".")
-  }
-
-  // set the default prefix
-  if prefix == auto {
-    if counter == none {
-      prefix = [*#blocktitle.*]
-    } else {
-      prefix = (counter) => [*#blocktitle #counter.*]
-    }
-  }
-
-  // check consistency of `counter` and `prefix`
-  if counter == none and type(prefix) == function {
-    panic("You have created a `mathblock` without a `counter` but with a `prefix` that accepts a counter. This is inconsistent. If you want a counter, then provide it with the `counter` argument (see documentation). If you don't want a counter, then you need to set a `prefix` that doesn't depend on a counter (see documentation).")
-  } else if counter != none and type(prefix) != function {
-    panic("You have created a `mathblock` with a `counter` but with a `prefix` that doesn't depend on a counter. This is inconsistent. If you don't want a counter, then remove the `counter` argument. If you want a counter, then set a prefix that depends on a counter (see documentation).")
-  }
-
+#let mathblock(blocktitle: none,
+  counter: none,
+  numbering: "1.1",
+  formatter: (blocktitle, number: none, title: none, body) =>  {
+    if number == none [
+      *#blocktitle*:#if title != none [ (#title)]
+    ] else [
+      *#blocktitle #number*:#if title != none [ (#title)]
+    ]
+    body
+    // NOTE: Custom suffix here
+  },
+  ..global_block_args
+) = {
   // wrap native counter
   if counter != none and type(counter) != dictionary {
     counter = (
@@ -32,7 +24,7 @@
 
   // return the environment for the user
   if counter != none {
-    return (title: none, numbering: numbering, prefix: prefix, titlix: titlix, suffix: suffix, bodyfmt: bodyfmt, number: auto, ..local_block_args, body) => {
+    return (title: none, numbering: numbering, formatter: formatter, number: auto, ..local_block_args, body) => {
       figure(kind: "great-theorem-counted", supplement: blocktitle, outlined: false)[#block(width: 100%, ..global_block_args.named(), ..local_block_args.named())[
         #if number == auto [
           // step and counter
@@ -48,20 +40,14 @@
           #label("great-theorems:numberfunc")
         ]
         // show content
-        #prefix(number)
-        #if title != none [#titlix(title)]
-        #bodyfmt(body)
-        #suffix
+        #formatter(blocktitle, number: number, title: title, body)
       ]]
     }
   } else {
-    return (title: none, numbering: numbering, prefix: prefix, titlix: titlix, suffix: suffix, bodyfmt: bodyfmt, ..local_block_args, body) => {
+    return (title: none, numbering: numbering, formatter: formatter, ..local_block_args, body) => {
       figure(kind: "great-theorem-uncounted", supplement: blocktitle, outlined: false)[#block(width: 100%, ..global_block_args.named(), ..local_block_args.named())[
         // show content
-        #prefix
-        #if title != none [#titlix(title)]
-        #bodyfmt(body)
-        #suffix
+        #formatter(blocktitle, number: none, title: title, body)
       ]]
     }
   }
@@ -73,7 +59,7 @@
     if type(of) == label {
       of = ref(of)
     }
-    
+
     figure(kind: "great-theorem-uncounted", supplement: blocktitle, outlined: false)[#block(width: 100%, ..global_block_args.named(), ..local_block_args.named())[
       // show content
       #if of != none [#prefix_with_of(of)] else [#prefix]
