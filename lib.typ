@@ -3,9 +3,9 @@
   numbering: "1.1",
   formatter: (blocktitle, number: none, title: none, body) =>  {
     if number == none [
-      *#blocktitle*:#if title != none [ (#title)]
+      *#blocktitle*.#if title != none [ (#title)]
     ] else [
-      *#blocktitle #number*:#if title != none [ (#title)]
+      *#blocktitle #number*.#if title != none [ (#title)]
     ]
     body
     // NOTE: Custom suffix here
